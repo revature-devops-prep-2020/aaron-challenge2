@@ -44,7 +44,7 @@ pipelline {
             steps {
                 dir("kube-deployments/testing") {
                     withKubeConfig([credentialsId: 'kubectl-creds', serverUrl: 'https://7B7243814A301887F34329CEF514F6CC.gr7.us-east-2.eks.amazonaws.com']) {
-                        sh 'kubectl apply -f .
+                        sh 'kubectl apply -f .'
                         sh 'kubectl rollout restart deployment/simple-app -n testing'
                     }
                 }
