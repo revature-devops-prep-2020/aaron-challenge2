@@ -1,0 +1,55 @@
+pipelline {
+    agent any
+
+    tools {
+        maven 'maven'
+    }
+
+    stages {
+        stage('Pull') {
+            steps {
+                git url: "https://github.com/revature-devops-prep-2020/aaron-challenge2.git", branch: "dev"
+            }
+        }
+        stage('Build') {
+            steps {
+                dir("maven-app") {
+                    sh "mvn package"
+                }
+            }
+        }
+        stage("Sonar") {
+            steps {
+                dir("maven-app") {
+                    withSonarQubeEnv("SonarCloud") {
+                        sh "mvn verify sonar:sonar"
+                    }
+                }
+            }
+        }
+        stage("Push Docker Image") {
+            steps {
+                dir("maven-app") {
+                    docker.withTool("docker") {
+                        repoId = "aarondownward/maven-app"
+                        image = docker.build(repoId)
+                        docker.withRegistry("https://registry.hub.docker.com", "dockerhub-cred") {
+                            image.push()
+                        }
+                    }
+                }
+            }
+        }
+        stage("Deploy to Testing") {
+            steps {
+                dir("kube-deployments/testing") {
+                    withKubeConfig([credentialsId: 'kubectl-creds', serverUrl: 'https://7B7243814A301887F34329CEF514F6CC.gr7.us-east-2.eks.amazonaws.com']) {
+                        sh 'kubectl apply -f .
+                        sh 'kubectl rollout restart deployment/simple-app -n testing'
+                    }
+                }
+            }
+        }
+    }
+
+}
